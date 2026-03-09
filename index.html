@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>📱 ИК-приёмник: 7 инженерных экспериментов</title>
+    <title>📱 ИК-приёмник: 7 экспериментов (IRremote 4.x)</title>
     <style>
         body {
             font-family: 'Segoe UI', 'Roboto', sans-serif;
@@ -113,57 +113,53 @@
             background: #d35400;
             color: white;
         }
-        .remote-buttons {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 10px;
-            max-width: 300px;
-            margin: 20px auto;
-        }
-        .remote-buttons div {
-            background: #2c3e50;
+        .version-badge {
+            background: #e67e22;
             color: white;
-            text-align: center;
-            padding: 15px 5px;
-            border-radius: 8px;
-            font-size: 1.2em;
-            box-shadow: 0 4px 0 #1a252f;
-        }
-        .protocol-demo {
-            display: flex;
-            justify-content: space-between;
-            background: #2c3e50;
-            padding: 20px;
+            padding: 5px 15px;
             border-radius: 30px;
+            font-size: 0.9em;
+            margin-left: 20px;
+        }
+        .struct-diagram {
+            background: #2c3e50;
             color: white;
+            padding: 20px;
+            border-radius: 16px;
             font-family: monospace;
         }
     </style>
 </head>
 <body>
 
-<h1>📱 ИК-ПРИЁМНИК VS1838 · 7 ИНЖЕНЕРНЫХ ЭКСПЕРИМЕНТОВ</h1>
+<h1>📱 ИК-ПРИЁМНИК VS1838 · 7 ИНЖЕНЕРНЫХ ЭКСПЕРИМЕНТОВ <span class="version-badge">IRremote 4.x</span></h1>
 
 <p style="font-size: 1.3em; background: white; padding: 20px; border-radius: 12px; border-left: 12px solid #e67e22;">
-    Принцип работы: инфракрасный пульт модулирует сигнал частотой 38 кГц. Приёмник VS1838 (TSOP38238) демодулирует его и выдаёт цифровой сигнал, который Arduino расшифровывает с помощью библиотеки IRremote .
+    Принцип работы: инфракрасный пульт модулирует сигнал частотой 38 кГц. Приёмник VS1838 демодулирует его и выдаёт цифровой сигнал, который Arduino расшифровывает с помощью библиотеки IRremote.
 </p>
 
-<!-- ============== ТЕОРИЯ ИК-ПРОТОКОЛОВ ============== -->
-<h2>📡 КАК РАБОТАЕТ ИК-ПУЛЬТ</h2>
+<!-- ============== ТЕОРИЯ IRREMOTE 4.x ============== -->
+<h2>📚 ЧТО НОВОГО В IRREMOTE 4.x</h2>
 <div class="exp">
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-        <div style="background: #f5f5f5; padding: 20px; border-radius: 12px;">
-            <h4 style="margin-top: 0;">🔹 Протокол NEC</h4>
-            <p>Самый распространённый протокол. Каждое нажатие передаёт 32 бита: адрес (8 бит), инвертированный адрес (8 бит), команда (8 бит), инвертированная команда (8 бит) .</p>
-            <div class="protocol-demo">
-                <span style="color: #e67e22;">A5</span> <span style="color: #95a5a6;">5A</span> <span style="color: #e67e22;">01</span> <span style="color: #95a5a6;">FE</span>
-            </div>
-        </div>
-        <div style="background: #f5f5f5; padding: 20px; border-radius: 12px;">
-            <h4 style="margin-top: 0;">🔹 Частота 38 кГц</h4>
-            <p>Все бытовые пульты используют модуляцию 38 кГц (иногда 36, 40, 56 кГц). Это позволяет отсекать помехи от освещения и других источников .</p>
-            <p><strong>VS1838</strong> настроен именно на 38 кГц.</p>
-        </div>
+    <div style="background: #2c3e50; color: white; padding: 20px; border-radius: 16px; margin-bottom: 20px;">
+        <code style="color: #e67e22;">IrReceiver.decode()</code> — главная функция для получения данных
+    </div>
+    
+    <div class="struct-diagram">
+        <p style="color: #e67e22; margin: 0 0 10px 0;">📁 Структура IrReceiver.decodedIRData:</p>
+        <pre style="margin: 0;">
+{
+  decodedRawData: 0xFF00FF00,  // 32-битный сырой код
+  protocol: NEC,                // Протокол (NEC, SONY, RC5...)
+  address: 0x00,                // Адрес устройства (для NEC)
+  command: 0x45,                 // Команда (код кнопки)
+  flags: 0x00                    // Флаги (повтор, ошибки)
+}
+        </pre>
+    </div>
+    
+    <div class="fact">
+        🔬 <strong>ФАКТ О БИБЛИОТЕКЕ:</strong> В версии 4.x библиотека автоматически определяет протокол (NEC, Sony, RC5, RC6, Samsung и др.) и раскладывает код на <code>address</code> и <code>command</code>. Для NEC-пультов команда — это код нажатой кнопки, который обычно занимает 1 байт (0x00-0xFF).
     </div>
 </div>
 
@@ -177,17 +173,16 @@
     <div><span style="background: #f39c12; color: black; padding: 5px 12px; border-radius: 20px;">OUT</span> → D11 (сигнал)</div>
     
     <div style="grid-column: 1/-1; margin-top: 20px; background: #1a252f; padding: 20px; border-radius: 12px;">
-        <strong>ℹ️ ПРИМЕЧАНИЕ:</strong> У разных моделей ИК-приёмников распиновка может отличаться! Обычно: 
+        <strong>ℹ️ ВАЖНО ПРО РАСПИНОВКУ:</strong> У разных моделей ИК-приёмников распиновка может отличаться! Обычно: 
         <br>Если смотреть на приёмник выпуклой стороной к себе: слева — OUT, посередине — GND, справа — VCC.
-        <br>Всегда сверяйтесь с даташитом или маркировкой на корпусе .
+        <br>Всегда сверяйтесь с даташитом или маркировкой на корпусе.
     </div>
 </div>
-
 
 <!-- ============== ЭКСПЕРИМЕНТ 1 ============== -->
 <h2>📌 ЭКСПЕРИМЕНТ 1 · ЧТЕНИЕ КОДОВ КНОПОК</h2>
 <div class="exp">
-    <h3>Библиотека IRremote · Декодинг сигналов пульта</h3>
+    <h3>IrReceiver.decode() · decodedRawData · resume()</h3>
     
     <div class="scheme-box">
         <strong>🔧 СХЕМА 1: Базовое подключение ИК-приёмника</strong><br>
@@ -201,59 +196,54 @@
         <div style="position: relative; width: 100%; padding-top: calc(max(56.25%, 400px));">
             <iframe src="https://app.cirkitdesigner.com/project/9a9688a8-2dbf-4dc0-9938-d83a274e5470?view=interactive_preview" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none;"></iframe>
         </div>
-        </div>
+    </div>
 
     <div class="code-block">
-// ЭКСПЕРИМЕНТ 1: Чтение кодов ИК-пульта
+// ЭКСПЕРИМЕНТ 1: Чтение кодов ИК-пульта (IRremote 4.x)
 // Установите библиотеку IRremote через менеджер библиотек
 
-#include <IRremote.h>
+#include <IRremote.hpp>  // Обратите внимание на .hpp!
 
-#define IR_PIN 11
-
-IRrecv irrecv(IR_PIN);  // Создаём объект для приёма
-decode_results results; // Структура для хранения результата
+#define IR_RECEIVE_PIN 11  // Пин подключения OUT
 
 void setup() {
-  Serial.begin(9600);
-  irrecv.enableIRIn();  // Запускаем приём
-  Serial.println("=== ИК-ПРИЁМНИК: РЕЖИМ ДЕКОДИНГА ===");
-  Serial.println("Нажимайте кнопки на пульте");
+    Serial.begin(115200);  // Высокая скорость для отладки
+    IrReceiver.begin(IR_RECEIVE_PIN);  // Запускаем приёмник
+    Serial.println(F("=== ИК-ПРИЁМНИК: РЕЖИМ ДЕКОДИНГА ==="));
+    Serial.println(F("Нажимайте кнопки на пульте"));
 }
 
 void loop() {
-  if (irrecv.decode(&results)) {  // Если получили сигнал
-    Serial.print("Код: 0x");
-    Serial.print(results.value, HEX);  // Выводим в 16-ричном виде
-    Serial.print(" | Длина: ");
-    Serial.print(results.bits);
-    Serial.print(" бит | Протокол: ");
-    
-    // Определяем тип протокола
-    switch (results.decode_type) {
-      case NEC: Serial.println("NEC"); break;
-      case SONY: Serial.println("SONY"); break;
-      case RC5: Serial.println("RC5"); break;
-      case RC6: Serial.println("RC6"); break;
-      default: Serial.println("Unknown");
+    if (IrReceiver.decode()) {  // Если получили сигнал
+        // Выводим сырой код кнопки
+        Serial.print(F("Код: 0x"));
+        Serial.println(IrReceiver.decodedIRData.decodedRawData, HEX);
+        
+        // Дополнительная информация (для продвинутых)
+        Serial.print(F("Протокол: "));
+        Serial.println(getProtocolString(IrReceiver.decodedIRData.protocol));
+        
+        if (IrReceiver.decodedIRData.flags & IRDATA_FLAGS_IS_REPEAT) {
+            Serial.println(F("ПОВТОР (удержание)"));
+        }
+        
+        IrReceiver.resume();  // Готовимся к следующему сигналу
     }
-    
-    irrecv.resume();  // Готовимся к следующему сигналу
-  }
 }
     </div>
 
     <div class="fact">
-        🔬 <strong>ФАКТ О БИБЛИОТЕКЕ:</strong> Библиотека IRremote автоматически определяет протокол (NEC, Sony, RC5, RC6 и др.) и возвращает код нажатой кнопки . Важно: при удержании кнопки многие пульты посылают специальный "repeat code" (0xFFFFFFFF в библиотеке).
+        🔬 <strong>ФАКТ О КОДЕ:</strong> <code>IrReceiver.decodedIRData.decodedRawData</code> хранит 32-битное значение кнопки. Для NEC-пультов это обычно 4 байта: адрес (8 бит), инвертированный адрес (8 бит), команда (8 бит), инвертированная команда (8 бит). Но библиотека уже всё расшифровала — команду можно получить через <code>IrReceiver.decodedIRData.command</code>.
     </div>
     
     <div class="fact">
-        📊 <strong>ЗАПИШИТЕ СВОИ КОДЫ:</strong> Для дальнейших экспериментов вам понадобятся коды ваших кнопок. Обычно они выглядят как <code>0xFF00FF00</code>. Рекомендую составить таблицу:
+        📊 <strong>ЗАПИШИТЕ СВОИ КОДЫ:</strong> Для дальнейших экспериментов составьте таблицу кодов вашего пульта:
         <table style="margin-top: 10px;">
-            <tr><th>Кнопка</th><th>Код (HEX)</th></tr>
-            <tr><td>Вверх (CH+)</td><td>0xFF00FF00</td></tr>
-            <tr><td>Вниз (CH-)</td><td>0xFF807F00</td></tr>
-            <tr><td>Громче</td><td>0xFF40BF00</td></tr>
+            <tr><th>Кнопка</th><th>Код (HEX)</th><th>Команда</th></tr>
+            <tr><td>↑ (CH+)</td><td>0xFF00FF00</td><td>0x45</td></tr>
+            <tr><td>↓ (CH-)</td><td>0xFF807F00</td><td>0x46</td></tr>
+            <tr><td>→ (VOL+)</td><td>0xFF40BF00</td><td>0x47</td></tr>
+            <tr><td>← (VOL-)</td><td>0xFFC03F00</td><td>0x44</td></tr>
         </table>
     </div>
 </div>
@@ -261,7 +251,7 @@ void loop() {
 <!-- ============== ЭКСПЕРИМЕНТ 2 ============== -->
 <h2>📌 ЭКСПЕРИМЕНТ 2 · УПРАВЛЕНИЕ СВЕТОДИОДОМ</h2>
 <div class="exp">
-    <h3>Вкл/выкл · Одна кнопка</h3>
+    <h3>command · Вкл/выкл по кнопке</h3>
     
     <div class="scheme-box">
         <strong>🔧 СХЕМА 2: ИК-приёмник + светодиод</strong><br>
@@ -284,53 +274,52 @@ void loop() {
 // ЭКСПЕРИМЕНТ 2: Управление светодиодом с пульта
 // Одна кнопка включает/выключает светодиод
 
-#include <IRremote.h>
+#include <IRremote.hpp>
 
-#define IR_PIN 11
+#define IR_RECEIVE_PIN 11
 #define LED_PIN 13
-
-IRrecv irrecv(IR_PIN);
-decode_results results;
-
-// Код кнопки, которой будем управлять (замените на свой!)
-#define BUTTON_POWER 0xFF00FF00  
 
 bool ledState = false;
 
 void setup() {
-  pinMode(LED_PIN, OUTPUT);
-  digitalWrite(LED_PIN, LOW);
-  
-  Serial.begin(9600);
-  irrecv.enableIRIn();
+    pinMode(LED_PIN, OUTPUT);
+    digitalWrite(LED_PIN, LOW);
+    
+    Serial.begin(115200);
+    IrReceiver.begin(IR_RECEIVE_PIN);
+    Serial.println(F("=== УПРАВЛЕНИЕ СВЕТОДИОДОМ ==="));
 }
 
 void loop() {
-  if (irrecv.decode(&results)) {
-    
-    // Проверяем, нажата ли нужная кнопка
-    if (results.value == BUTTON_POWER) {
-      ledState = !ledState;  // Переключаем состояние
-      digitalWrite(LED_PIN, ledState ? HIGH : LOW);
-      
-      Serial.print("Светодиод: ");
-      Serial.println(ledState ? "ВКЛ" : "ВЫКЛ");
+    if (IrReceiver.decode()) {
+        
+        // Игнорируем повторы
+        if (!(IrReceiver.decodedIRData.flags & IRDATA_FLAGS_IS_REPEAT)) {
+            
+            // Проверяем код кнопки (замените на свой!)
+            if (IrReceiver.decodedIRData.decodedRawData == 0xFF00FF00) {
+                ledState = !ledState;
+                digitalWrite(LED_PIN, ledState ? HIGH : LOW);
+                
+                Serial.print(F("Светодиод: "));
+                Serial.println(ledState ? F("ВКЛ") : F("ВЫКЛ"));
+            }
+        }
+        
+        IrReceiver.resume();
     }
-    
-    irrecv.resume();
-  }
 }
     </div>
 
     <div class="fact">
-        🔄 <strong>ПРОБЛЕМА УДЕРЖАНИЯ:</strong> При удержании кнопки многие пульты посылают специальный код повтора (часто 0xFFFFFFFF). В этом эксперименте мы его игнорируем — светодиод переключается только один раз. В эксперименте 4 мы научимся обрабатывать удержание .
+        💡 <strong>ФЛАГ ПОВТОРА:</strong> <code>IRDATA_FLAGS_IS_REPEAT</code> позволяет отличить новое нажатие от удержания кнопки. Без этой проверки светодиод будет мигать при каждом повторе, а нам нужно переключение только один раз.
     </div>
 </div>
 
 <!-- ============== ЭКСПЕРИМЕНТ 3 ============== -->
-<h2>📌 ЭКСПЕРИМЕНТ 3 · УПРАВЛЕНИЕ RGB-СВЕТОДИОДОМ</h2>
+<h2>📌 ЭКСПЕРИМЕНТ 3 · RGB-ПУЛЬТ</h2>
 <div class="exp">
-    <h3>4 кнопки: R/G/B/Off</h3>
+    <h3>4 кнопки: Красный / Зелёный / Синий / Выкл</h3>
     
     <div class="scheme-box">
         <strong>🔧 СХЕМА 3: ИК-приёмник + RGB-светодиод</strong><br>
@@ -352,87 +341,87 @@ void loop() {
     </div>
 
     <div class="code-block">
-// ЭКСПЕРИМЕНТ 3: Управление RGB-светодиодом с пульта
-// Кнопки: 1-красный, 2-зелёный, 3-синий, 4-выкл
+// ЭКСПЕРИМЕНТ 3: RGB-управление с пульта
+// Кнопки 1,2,3,4 управляют цветами
 
-#include <IRremote.h>
+#include <IRremote.hpp>
 
-#define IR_PIN 11
+#define IR_RECEIVE_PIN 11
 
 #define RED_PIN 9
 #define GREEN_PIN 10
 #define BLUE_PIN 6
 
-IRrecv irrecv(IR_PIN);
-decode_results results;
-
-// Коды кнопок вашего пульта (замените на свои!)
+// Коды кнопок (замените на свои!)
 #define BUTTON_RED   0xFF00FF00
 #define BUTTON_GREEN 0xFF807F00
 #define BUTTON_BLUE  0xFF40BF00
 #define BUTTON_OFF   0xFF20DF00
 
 void setup() {
-  pinMode(RED_PIN, OUTPUT);
-  pinMode(GREEN_PIN, OUTPUT);
-  pinMode(BLUE_PIN, OUTPUT);
-  
-  // Выключаем всё
-  digitalWrite(RED_PIN, LOW);
-  digitalWrite(GREEN_PIN, LOW);
-  digitalWrite(BLUE_PIN, LOW);
-  
-  Serial.begin(9600);
-  irrecv.enableIRIn();
+    pinMode(RED_PIN, OUTPUT);
+    pinMode(GREEN_PIN, OUTPUT);
+    pinMode(BLUE_PIN, OUTPUT);
+    
+    // Выключаем всё
+    digitalWrite(RED_PIN, LOW);
+    digitalWrite(GREEN_PIN, LOW);
+    digitalWrite(BLUE_PIN, LOW);
+    
+    Serial.begin(115200);
+    IrReceiver.begin(IR_RECEIVE_PIN);
 }
 
 void loop() {
-  if (irrecv.decode(&results)) {
-    
-    switch(results.value) {
-      case BUTTON_RED:
-        digitalWrite(RED_PIN, HIGH);
-        digitalWrite(GREEN_PIN, LOW);
-        digitalWrite(BLUE_PIN, LOW);
-        Serial.println("Красный");
-        break;
+    if (IrReceiver.decode()) {
         
-      case BUTTON_GREEN:
-        digitalWrite(RED_PIN, LOW);
-        digitalWrite(GREEN_PIN, HIGH);
-        digitalWrite(BLUE_PIN, LOW);
-        Serial.println("Зелёный");
-        break;
+        if (!(IrReceiver.decodedIRData.flags & IRDATA_FLAGS_IS_REPEAT)) {
+            
+            switch(IrReceiver.decodedIRData.decodedRawData) {
+                case BUTTON_RED:
+                    digitalWrite(RED_PIN, HIGH);
+                    digitalWrite(GREEN_PIN, LOW);
+                    digitalWrite(BLUE_PIN, LOW);
+                    Serial.println(F("Красный"));
+                    break;
+                    
+                case BUTTON_GREEN:
+                    digitalWrite(RED_PIN, LOW);
+                    digitalWrite(GREEN_PIN, HIGH);
+                    digitalWrite(BLUE_PIN, LOW);
+                    Serial.println(F("Зелёный"));
+                    break;
+                    
+                case BUTTON_BLUE:
+                    digitalWrite(RED_PIN, LOW);
+                    digitalWrite(GREEN_PIN, LOW);
+                    digitalWrite(BLUE_PIN, HIGH);
+                    Serial.println(F("Синий"));
+                    break;
+                    
+                case BUTTON_OFF:
+                    digitalWrite(RED_PIN, LOW);
+                    digitalWrite(GREEN_PIN, LOW);
+                    digitalWrite(BLUE_PIN, LOW);
+                    Serial.println(F("Выключено"));
+                    break;
+            }
+        }
         
-      case BUTTON_BLUE:
-        digitalWrite(RED_PIN, LOW);
-        digitalWrite(GREEN_PIN, LOW);
-        digitalWrite(BLUE_PIN, HIGH);
-        Serial.println("Синий");
-        break;
-        
-      case BUTTON_OFF:
-        digitalWrite(RED_PIN, LOW);
-        digitalWrite(GREEN_PIN, LOW);
-        digitalWrite(BLUE_PIN, LOW);
-        Serial.println("Выключено");
-        break;
+        IrReceiver.resume();
     }
-    
-    irrecv.resume();
-  }
 }
     </div>
 
     <div class="fact">
-        🎨 <strong>ГРАДАЦИИ ЦВЕТА:</strong> В этом эксперименте мы просто включаем/выключаем цвета. Но можно использовать analogWrite() для ШИМ-регулировки яркости и получать миллионы оттенков. Например, кнопками "+"/"-" можно менять яркость красного, как в эксперименте 5 .
+        🎨 <strong>МИЛЛИОНЫ ЦВЕТОВ:</strong> Вместо включения/выключения можно использовать ШИМ (analogWrite) для плавной регулировки. Например, кнопками 5 и 6 менять яркость выбранного цвета. Так получается полноценный RGB-контроллер.
     </div>
 </div>
 
 <!-- ============== ЭКСПЕРИМЕНТ 4 ============== -->
 <h2>📌 ЭКСПЕРИМЕНТ 4 · УПРАВЛЕНИЕ СЕРВОПРИВОДОМ</h2>
 <div class="exp">
-    <h3>Поворот налево/направо</h3>
+    <h3>Влево / Вправо / Центр</h3>
     
     <div class="scheme-box">
         <strong>🔧 СХЕМА 4: ИК-приёмник + сервопривод</strong><br>
@@ -454,84 +443,76 @@ void loop() {
 
     <div class="code-block">
 // ЭКСПЕРИМЕНТ 4: Управление сервоприводом с пульта
-// Кнопки: влево/вправо, центр
 
-#include <IRremote.h>
+#include <IRremote.hpp>
 #include <Servo.h>
 
-#define IR_PIN 11
+#define IR_RECEIVE_PIN 11
 #define SERVO_PIN 9
 
-IRrecv irrecv(IR_PIN);
-decode_results results;
 Servo myServo;
-
 int angle = 90;  // Начальное положение
 
 // Коды кнопок (замените на свои!)
-#define BUTTON_LEFT  0xFF00FF00
-#define BUTTON_RIGHT 0xFF807F00
+#define BUTTON_LEFT   0xFF00FF00
+#define BUTTON_RIGHT  0xFF807F00
 #define BUTTON_CENTER 0xFF40BF00
 
 void setup() {
-  myServo.attach(SERVO_PIN);
-  myServo.write(angle);
-  
-  Serial.begin(9600);
-  irrecv.enableIRIn();
+    myServo.attach(SERVO_PIN);
+    myServo.write(angle);
+    
+    Serial.begin(115200);
+    IrReceiver.begin(IR_RECEIVE_PIN);
 }
 
 void loop() {
-  if (irrecv.decode(&results)) {
-    
-    // Обработка удержания: код повтора 0xFFFFFFFF
-    if (results.value == 0xFFFFFFFF) {
-      // Используем предыдущую команду (хранить в отдельной переменной)
-      // Для простоты игнорируем
+    if (IrReceiver.decode()) {
+        
+        if (!(IrReceiver.decodedIRData.flags & IRDATA_FLAGS_IS_REPEAT)) {
+            
+            switch(IrReceiver.decodedIRData.decodedRawData) {
+                case BUTTON_LEFT:
+                    angle -= 10;
+                    if (angle < 0) angle = 0;
+                    Serial.print(F("Влево: "));
+                    Serial.println(angle);
+                    break;
+                    
+                case BUTTON_RIGHT:
+                    angle += 10;
+                    if (angle > 180) angle = 180;
+                    Serial.print(F("Вправо: "));
+                    Serial.println(angle);
+                    break;
+                    
+                case BUTTON_CENTER:
+                    angle = 90;
+                    Serial.println(F("Центр"));
+                    break;
+            }
+            
+            myServo.write(angle);
+        }
+        
+        IrReceiver.resume();
     }
-    else {
-      switch(results.value) {
-        case BUTTON_LEFT:
-          angle -= 10;
-          if (angle < 0) angle = 0;
-          Serial.print("Влево: ");
-          Serial.println(angle);
-          break;
-          
-        case BUTTON_RIGHT:
-          angle += 10;
-          if (angle > 180) angle = 180;
-          Serial.print("Вправо: ");
-          Serial.println(angle);
-          break;
-          
-        case BUTTON_CENTER:
-          angle = 90;
-          Serial.println("Центр");
-          break;
-      }
-      
-      myServo.write(angle);
-    }
-    
-    irrecv.resume();
-  }
 }
     </div>
 
     <div class="fact">
-        🔄 <strong>ОБРАБОТКА УДЕРЖАНИЯ:</strong> Код 0xFFFFFFFF означает "повтор последней команды". В этом примере мы его игнорируем, но можно сделать так, чтобы при удержании сервопривод продолжал двигаться. Для этого нужно запоминать последнюю нажатую кнопку .
+        🔄 <strong>ДЛЯ ПЛАВНОГО ДВИЖЕНИЯ:</strong> Если хотите, чтобы сервопривод двигался плавно при удержании кнопки, используйте флаг <code>IRDATA_FLAGS_IS_REPEAT</code> для постоянного изменения угла с небольшой задержкой.
     </div>
 </div>
 
 <!-- ============== ЭКСПЕРИМЕНТ 5 ============== -->
-<h2>📌 ЭКСПЕРИМЕНТ 5 · ДИММЕР (ШИМ-РЕГУЛИРОВКА)</h2>
+<h2>📌 ЭКСПЕРИМЕНТ 5 · ДИММЕР (ПЛАВНАЯ РЕГУЛИРОВКА)</h2>
 <div class="exp">
-    <h3>Плавное изменение яркости кнопками +/-</h3>
+    <h3>Удержание кнопки · Яркость +/–</h3>
     
     <div class="scheme-box">
         <strong>🔧 СХЕМА 5: ИК-приёмник + светодиод на PWM</strong><br>
-        Компоненты: Arduino Uno, ИК-приёмник, светодиод, резистор 220Ω (подключаем к D9 — PWM) <br>
+        Компоненты: Arduino Uno, ИК-приёмник, светодиод, резистор 220Ω (подключаем к D9) <br>
         <table style="margin-top: 15px; background: transparent;">
             <tr><th>VS1838</th><th>Arduino</th></tr>
             <tr><td>VCC</td><td>5V</td></tr>
@@ -547,86 +528,84 @@ void loop() {
     </div>
 
     <div class="code-block">
-// ЭКСПЕРИМЕНТ 5: Диммер с ИК-пульта
-// Кнопки: громче = ярче, тише = тусклее
+// ЭКСПЕРИМЕНТ 5: Диммер с поддержкой удержания
+// Громче = ярче, тише = тусклее
 
-#include <IRremote.h>
+#include <IRremote.hpp>
 
-#define IR_PIN 11
+#define IR_RECEIVE_PIN 11
 #define LED_PWM 9
 
-IRrecv irrecv(IR_PIN);
-decode_results results;
-
-#define BUTTON_UP   0xFF00FF00  // Громче
-#define BUTTON_DOWN 0xFF807F00  // Тише
+#define BUTTON_UP   0xFF00FF00  // Громче (+)
+#define BUTTON_DOWN 0xFF807F00  // Тише (-)
 
 int brightness = 0;
-bool lastCommandWasRepeat = false;
-unsigned long lastCommand = 0;
+unsigned long lastAction = 0;
 
 void setup() {
-  pinMode(LED_PWM, OUTPUT);
-  analogWrite(LED_PWM, brightness);
-  
-  Serial.begin(9600);
-  irrecv.enableIRIn();
+    pinMode(LED_PWM, OUTPUT);
+    analogWrite(LED_PWM, brightness);
+    
+    Serial.begin(115200);
+    IrReceiver.begin(IR_RECEIVE_PIN);
 }
 
 void loop() {
-  if (irrecv.decode(&results)) {
-    
-    if (results.value == 0xFFFFFFFF && lastCommand != 0) {
-      // Повтор последней команды
-      if (lastCommand == BUTTON_UP) {
-        brightness += 5;
-        if (brightness > 255) brightness = 255;
-        analogWrite(LED_PWM, brightness);
-        Serial.print("Яркость: ");
-        Serial.println(brightness);
-      }
-      else if (lastCommand == BUTTON_DOWN) {
-        brightness -= 5;
-        if (brightness < 0) brightness = 0;
-        analogWrite(LED_PWM, brightness);
-        Serial.print("Яркость: ");
-        Serial.println(brightness);
-      }
+    if (IrReceiver.decode()) {
+        
+        if (IrReceiver.decodedIRData.flags & IRDATA_FLAGS_IS_REPEAT) {
+            // Удержание кнопки
+            if (millis() - lastAction > 50) {  // 50 мс между шагами
+                if (IrReceiver.decodedIRData.decodedRawData == BUTTON_UP) {
+                    brightness += 5;
+                    if (brightness > 255) brightness = 255;
+                    analogWrite(LED_PWM, brightness);
+                    Serial.print(F("Яркость: "));
+                    Serial.println(brightness);
+                }
+                else if (IrReceiver.decodedIRData.decodedRawData == BUTTON_DOWN) {
+                    brightness -= 5;
+                    if (brightness < 0) brightness = 0;
+                    analogWrite(LED_PWM, brightness);
+                    Serial.print(F("Яркость: "));
+                    Serial.println(brightness);
+                }
+                lastAction = millis();
+            }
+        }
+        else {
+            // Одиночное нажатие
+            if (IrReceiver.decodedIRData.decodedRawData == BUTTON_UP) {
+                brightness += 15;
+                if (brightness > 255) brightness = 255;
+                analogWrite(LED_PWM, brightness);
+                Serial.print(F("Яркость: "));
+                Serial.println(brightness);
+            }
+            else if (IrReceiver.decodedIRData.decodedRawData == BUTTON_DOWN) {
+                brightness -= 15;
+                if (brightness < 0) brightness = 0;
+                analogWrite(LED_PWM, brightness);
+                Serial.print(F("Яркость: "));
+                Serial.println(brightness);
+            }
+            lastAction = millis();
+        }
+        
+        IrReceiver.resume();
     }
-    else {
-      // Новая команда
-      if (results.value == BUTTON_UP) {
-        brightness += 15;
-        if (brightness > 255) brightness = 255;
-        analogWrite(LED_PWM, brightness);
-        Serial.print("Яркость: ");
-        Serial.println(brightness);
-        lastCommand = BUTTON_UP;
-      }
-      else if (results.value == BUTTON_DOWN) {
-        brightness -= 15;
-        if (brightness < 0) brightness = 0;
-        analogWrite(LED_PWM, brightness);
-        Serial.print("Яркость: ");
-        Serial.println(brightness);
-        lastCommand = BUTTON_DOWN;
-      }
-    }
-    
-    irrecv.resume();
-  }
 }
     </div>
 
     <div class="fact">
-        💡 <strong>ПЛАВНАЯ РЕГУЛИРОВКА:</strong> Здесь мы используем ШИМ (analogWrite) для изменения яркости. При удержании кнопки (код 0xFFFFFFFF) продолжаем менять яркость в ту же сторону. Так работают настоящие диммеры и пульты для светодиодных лент .
+        💡 <strong>УДЕРЖАНИЕ VS ПОВТОР:</strong> Флаг <code>IRDATA_FLAGS_IS_REPEAT</code> появляется при удержании кнопки. Частота повторов зависит от пульта (обычно ~40 мс). Мы добавляем собственную задержку 50 мс, чтобы яркость менялась плавно, а не скачками.
     </div>
 </div>
 
 <!-- ============== ЭКСПЕРИМЕНТ 6 ============== -->
 <h2>📌 ЭКСПЕРИМЕНТ 6 · LCD-ДИСПЛЕЙ</h2>
 <div class="exp">
-    <h3>Вывод нажатий на экран</h3>
+    <h3>Вывод команды и протокола</h3>
     
     <div class="scheme-box">
         <strong>🔧 СХЕМА 6: ИК-приёмник + LCD I2C</strong><br>
@@ -649,93 +628,81 @@ void loop() {
 
     <div class="code-block">
 // ЭКСПЕРИМЕНТ 6: ИК-пульт + LCD-дисплей
-// Показывает код нажатой кнопки и имя
 
-#include <IRremote.h>
+#include <IRremote.hpp>
 #include <Wire.h>
 #include <LiquidCrystal_I2C.h>
 
-#define IR_PIN 11
+#define IR_RECEIVE_PIN 11
 
-IRrecv irrecv(IR_PIN);
-decode_results results;
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 
 void setup() {
-  lcd.init();
-  lcd.backlight();
-  lcd.setCursor(0, 0);
-  lcd.print("IR Remote");
-  lcd.setCursor(0, 1);
-  lcd.print("Press any key");
-  
-  Serial.begin(9600);
-  irrecv.enableIRIn();
-  
-  delay(2000);
-  lcd.clear();
+    lcd.init();
+    lcd.backlight();
+    lcd.setCursor(0, 0);
+    lcd.print("IR Remote Ready");
+    
+    Serial.begin(115200);
+    IrReceiver.begin(IR_RECEIVE_PIN);
+    
+    delay(2000);
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.print("Code:");
+    lcd.setCursor(0, 1);
+    lcd.print("Cmd:");
 }
 
 void loop() {
-  if (irrecv.decode(&results)) {
-    
-    lcd.setCursor(0, 0);
-    lcd.print("Code:          ");
-    lcd.setCursor(6, 0);
-    
-    // Выводим код в 16-ричном формате
-    char buf[9];
-    sprintf(buf, "%08lX", results.value);
-    lcd.print(buf);
-    
-    lcd.setCursor(0, 1);
-    lcd.print("                "); // Очистка второй строки
-    lcd.setCursor(0, 1);
-    
-    // Определяем популярные кнопки
-    switch(results.value) {
-      case 0xFF00FF00:
-        lcd.print("BUTTON: POWER");
-        break;
-      case 0xFF807F00:
-        lcd.print("BUTTON: VOL+");
-        break;
-      case 0xFF40BF00:
-        lcd.print("BUTTON: VOL-");
-        break;
-      case 0xFF20DF00:
-        lcd.print("BUTTON: CH+");
-        break;
-      case 0xFFA05F00:
-        lcd.print("BUTTON: CH-");
-        break;
-      default:
-        if (results.value == 0xFFFFFFFF) {
-          lcd.print("REPEAT");
-        } else {
-          lcd.print("UNKNOWN");
+    if (IrReceiver.decode()) {
+        
+        // Вывод кода (верхняя строка)
+        lcd.setCursor(6, 0);
+        char buf[9];
+        sprintf(buf, "%08lX", IrReceiver.decodedIRData.decodedRawData);
+        lcd.print(buf);
+        
+        // Вывод команды и протокола (нижняя строка)
+        lcd.setCursor(5, 1);
+        lcd.print("        ");  // Очистка
+        lcd.setCursor(5, 1);
+        lcd.print(IrReceiver.decodedIRData.command, HEX);
+        
+        // Если есть адрес, покажем и его
+        if (IrReceiver.decodedIRData.address != 0) {
+            lcd.print(" A:");
+            lcd.print(IrReceiver.decodedIRData.address, HEX);
         }
+        
+        // Мигание при повторе
+        if (IrReceiver.decodedIRData.flags & IRDATA_FLAGS_IS_REPEAT) {
+            lcd.setCursor(15, 1);
+            lcd.print("*");
+        } else {
+            lcd.setCursor(15, 1);
+            lcd.print(" ");
+        }
+        
+        IrReceiver.resume();
     }
-    
-    irrecv.resume();
-  }
 }
     </div>
 
     <div class="fact">
-        📟 <strong>ФОРМАТИРОВАНИЕ:</strong> <code>sprintf(buf, "%08lX", results.value)</code> выводит 32-битное число в 16-ричном виде с ведущими нулями (8 символов). Это удобно для отладки и сравнения кодов .
+        📟 <strong>ПОЛЕЗНЫЙ ПРИЁМ:</strong> <code>sprintf(buf, "%08lX", value)</code> форматирует 32-битное число в 8-символьный 16-ричный код с ведущими нулями. Это удобно для отладки и сравнения кодов.
     </div>
 </div>
 
 <!-- ============== ЭКСПЕРИМЕНТ 7 ============== -->
-<h2>📌 ЭКСПЕРИМЕНТ 7 · УПРАВЛЕНИЕ РЕЛЕ (БЫТОВАЯ ТЕХНИКА)</h2>
+<h2>📌 ЭКСПЕРИМЕНТ 7 · РЕЛЕ (УПРАВЛЕНИЕ НАГРУЗКОЙ)</h2>
 <div class="exp">
-    <h3>Включаем/выключаем лампу или вентилятор</h3>
+    <h3>Включаем лампу / вентилятор</h3>
     
     <div class="scheme-box">
-        <strong>🔧 СХЕМА 7: ИК-приёмник + реле + нагрузка</strong><br>
-        Компоненты: Arduino Uno, ИК-приёмник, модуль реле, нагрузка (лампа или светодиод) <br>
-        <p class="warning">⚠️ При работе с 220В соблюдайте предельную осторожность! Для экспериментов используйте низковольтную нагрузку (12В лампочка) .</p>
+        <strong>🔧 СХЕМА 7: ИК-приёмник + реле</strong><br>
+        Компоненты: Arduino Uno, ИК-приёмник, модуль реле <br>
+        <p class="warning">⚠️ При работе с 220В соблюдайте предельную осторожность! Для экспериментов используйте низковольтную нагрузку (12В лампочка).</p>
         <table style="margin-top: 15px; background: transparent;">
             <tr><th>VS1838</th><th>Arduino</th></tr>
             <tr><td>VCC</td><td>5V</td></tr>
@@ -753,167 +720,126 @@ void loop() {
 
     <div class="code-block">
 // ЭКСПЕРИМЕНТ 7: Управление реле с ИК-пульта
-// Включаем/выключаем нагрузку (лампу, вентилятор)
+// Кнопка POWER включает/выключает нагрузку
 
-#include <IRremote.h>
+#include <IRremote.hpp>
 
-#define IR_PIN 11
+#define IR_RECEIVE_PIN 11
 #define RELAY_PIN 8
 
-IRrecv irrecv(IR_PIN);
-decode_results results;
-
-#define BUTTON_POWER 0xFF00FF00  // Кнопка включения
+#define BUTTON_POWER 0xFF00FF00  // Кнопка питания
 
 bool relayState = false;
-unsigned long lastPressTime = 0;
-const unsigned long debounceDelay = 300;  // Защита от дребезга
+unsigned long lastPress = 0;
+const unsigned long debounceDelay = 300;
 
 void setup() {
-  pinMode(RELAY_PIN, OUTPUT);
-  digitalWrite(RELAY_PIN, LOW);  // Нагрузка выключена
-  
-  Serial.begin(9600);
-  irrecv.enableIRIn();
+    pinMode(RELAY_PIN, OUTPUT);
+    digitalWrite(RELAY_PIN, LOW);
+    
+    Serial.begin(115200);
+    IrReceiver.begin(IR_RECEIVE_PIN);
 }
 
 void loop() {
-  if (irrecv.decode(&results)) {
-    
-    // Игнорируем повторные сигналы в течение 300 мс
-    if (results.value != 0xFFFFFFFF && 
-        millis() - lastPressTime > debounceDelay) {
-      
-      if (results.value == BUTTON_POWER) {
-        relayState = !relayState;
-        digitalWrite(RELAY_PIN, relayState ? HIGH : LOW);
+    if (IrReceiver.decode()) {
         
-        Serial.print("Реле: ");
-        Serial.println(relayState ? "ВКЛ" : "ВЫКЛ");
+        // Игнорируем повторы
+        if (!(IrReceiver.decodedIRData.flags & IRDATA_FLAGS_IS_REPEAT)) {
+            
+            // Защита от дребезга
+            if (millis() - lastPress > debounceDelay) {
+                
+                if (IrReceiver.decodedIRData.decodedRawData == BUTTON_POWER) {
+                    relayState = !relayState;
+                    digitalWrite(RELAY_PIN, relayState ? HIGH : LOW);
+                    
+                    Serial.print(F("Реле: "));
+                    Serial.println(relayState ? F("ВКЛ") : F("ВЫКЛ"));
+                    
+                    lastPress = millis();
+                }
+            }
+        }
         
-        lastPressTime = millis();
-      }
+        IrReceiver.resume();
     }
-    
-    irrecv.resume();
-  }
 }
     </div>
 
     <div class="fact">
-        🏠 <strong>УМНЫЙ ДОМ:</strong> Точно так работают системы умного дома: дистанционное управление светом, шторами, вентиляцией. Добавив ESP8266, можно управлять нагрузкой через интернет, а ИК-пульт оставить как резервный канал .
+        🏠 <strong>УМНЫЙ ДОМ:</strong> Точно так работают системы дистанционного управления светом. Добавив ESP8266, можно управлять нагрузкой через интернет, а ИК-пульт оставить как резервный канал.
     </div>
 </div>
 
-<!-- ============== ТАБЛИЦА КОМПОНЕНТОВ ============== -->
-<h2>📋 СПЕЦИФИКАЦИЯ КОМПОНЕНТОВ</h2>
+<!-- ============== ТАБЛИЦА ПОДКЛЮЧЕНИЙ ============== -->
+<h2>📋 ТАБЛИЦА ПОДКЛЮЧЕНИЙ ДЛЯ ВСЕХ ЭКСПЕРИМЕНТОВ</h2>
 <div class="exp">
     <table>
         <tr>
-            <th>Компонент</th>
-            <th>Назначение</th>
-            <th>Подключение</th>
-            <th>Примечание</th>
+            <th>Эксперимент</th>
+            <th>Компоненты</th>
+            <th>Пины Arduino</th>
         </tr>
         <tr>
-            <td>📱 ИК-приёмник VS1838</td>
-            <td>Приём сигналов от пульта</td>
-            <td>VCC→5V, GND→GND, OUT→D11</td>
-            <td>Частота 38 кГц, распиновка может отличаться! </td>
+            <td>1. Чтение кодов</td>
+            <td>ИК-приёмник</td>
+            <td>OUT → D11</td>
         </tr>
         <tr>
-            <td>💡 Светодиод</td>
-            <td>Визуальная индикация</td>
-            <td>Анод→D13 через 220Ω, катод→GND</td>
-            <td>Для PWM использовать D9, D10, D11</td>
+            <td>2. Светодиод</td>
+            <td>ИК + светодиод</td>
+            <td>OUT→D11, LED→D13</td>
         </tr>
         <tr>
-            <td>🌈 RGB-светодиод</td>
-            <td>Цветовая индикация</td>
-            <td>R→D9, G→D10, B→D6 через 220Ω, катод→GND</td>
-            <td>Общий катод</td>
+            <td>3. RGB</td>
+            <td>ИК + RGB-светодиод</td>
+            <td>OUT→D11, R→D9, G→D10, B→D6</td>
         </tr>
         <tr>
-            <td>🔄 Сервопривод</td>
-            <td>Поворотные механизмы</td>
-            <td>Сигнал→D9, +5V→5V, GND→GND</td>
-            <td>Угол 0–180°</td>
+            <td>4. Сервопривод</td>
+            <td>ИК + серво</td>
+            <td>OUT→D11, SIG→D9</td>
         </tr>
         <tr>
-            <td>📟 LCD I2C</td>
-            <td>Вывод информации</td>
-            <td>VCC→5V, GND→GND, SDA→A4, SCL→A5</td>
-            <td>Адрес 0x27/0x3F</td>
+            <td>5. Диммер</td>
+            <td>ИК + светодиод (PWM)</td>
+            <td>OUT→D11, LED→D9</td>
         </tr>
         <tr>
-            <td>⚡ Модуль реле</td>
-            <td>Управление нагрузкой</td>
-            <td>IN→D8, VCC→5V, GND→GND</td>
-            <td>Для 220В нужна изоляция и внешнее питание </td>
+            <td>6. LCD</td>
+            <td>ИК + LCD I2C</td>
+            <td>OUT→D11, SDA→A4, SCL→A5</td>
+        </tr>
+        <tr>
+            <td>7. Реле</td>
+            <td>ИК + реле</td>
+            <td>OUT→D11, IN→D8</td>
         </tr>
     </table>
+    <p style="margin-top: 20px;"><strong>Общее для всех:</strong> VCC → 5V, GND → GND</p>
 </div>
 
-
-
-<!-- ============== ИНЖЕНЕРНЫЕ ЗАДАЧИ ============== -->
-<h2>📌 ЗАДАЧИ ДЛЯ САМОСТОЯТЕЛЬНОЙ РАБОТЫ</h2>
-<div class="exp">
-    <div style="background: #f5f5f5; padding: 20px; border-radius: 12px; margin-bottom: 15px;">
-        <strong style="font-size: 1.2em;">🔹 Уровень 1 (базовый)</strong>
-        <ul style="margin-top: 12px;">
-            <li>Сделать "универсальный пульт": записать коды от телевизора и кондиционера</li>
-            <li>Добавить зуммер, который пищит при каждом нажатии</li>
-            <li>Реализовать режим "программирования" — кнопка запоминает текущий цвет</li>
-        </ul>
-    </div>
-    
-    <div style="background: #fef5e7; padding: 20px; border-radius: 12px; margin-bottom: 15px;">
-        <strong style="font-size: 1.2em;">🔸 Уровень 2 (средний)</strong>
-        <ul style="margin-top: 12px;">
-            <li>Сделать "макросы": одна кнопка выполняет последовательность действий</li>
-            <li>Управлять двумя сервоприводами (камера: влево-вправо и вверх-вниз)</li>
-            <li>Сделать ИК-приёмник с памятью: запоминать последние 10 нажатий</li>
-        </ul>
-    </div>
-    
-    <div style="background: #d4edda; padding: 20px; border-radius: 12px;">
-        <strong style="font-size: 1.2em;">🔹 Уровень 3 (продвинутый)</strong>
-        <ul style="margin-top: 12px;">
-            <li>Реализовать эмуляцию ИК-пульта (передатчик + приёмник) для управления техникой</li>
-            <li>Подключить ESP8266 и отправлять нажатия в Telegram</li>
-            <li>Сделать систему "умный дом" с ИК-управлением + обратной связью по WiFi</li>
-        </ul>
-    </div>
-</div>
 
 <!-- ============== РЕАЛЬНЫЕ ПРИМЕНЕНИЯ ============== -->
-<h2>🏭 РЕАЛЬНЫЕ ПРИМЕНЕНИЯ ИК-УПРАВЛЕНИЯ</h2>
+<h2>🏭 ГДЕ ИСПОЛЬЗУЮТ ИК-УПРАВЛЕНИЕ</h2>
 <div class="exp">
     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;">
         <div style="background: white; border-left: 6px solid #d35400; padding: 18px; border-radius: 8px;">
             <strong>📺 Бытовая техника</strong><br>
-            Телевизоры, кондиционеры, музыкальные центры, проекторы — классическое применение ИК-пультов .
+            Телевизоры, кондиционеры, музыкальные центры — классическое применение.
         </div>
         <div style="background: white; border-left: 6px solid #d35400; padding: 18px; border-radius: 8px;">
             <strong>🏠 Умный дом</strong><br>
-            Управление освещением, шторами, вентиляцией. Часто ИК-пульт дублирует управление через WiFi .
+            Управление освещением, шторами, вентиляцией. Часто дублирует WiFi.
         </div>
         <div style="background: white; border-left: 6px solid #d35400; padding: 18px; border-radius: 8px;">
             <strong>🎮 Робототехника</strong><br>
-            Дистанционное управление роботами, особенно на соревнованиях (простота и надёжность) .
-        </div>
-        <div style="background: white; border-left: 6px solid #d35400; padding: 18px; border-radius: 8px;">
-            <strong>🔧 Промышленность</strong><br>
-            Управление кранами, станками, вентиляцией во взрывоопасных зонах (ИК безопаснее радио) .
+            Дистанционное управление роботами на соревнованиях.
         </div>
         <div style="background: white; border-left: 6px solid #d35400; padding: 18px; border-radius: 8px;">
             <strong>🏨 Гостиницы</strong><br>
-            Универсальные пульты для управления телевизором, кондиционером, освещением .
-        </div>
-        <div style="background: white; border-left: 6px solid #d35400; padding: 18px; border-radius: 8px;">
-            <strong>📚 Образование</strong><br>
-            Самый наглядный способ объяснить принципы модуляции, протоколы и декодинг .
+            Универсальные пульты для управления всей техникой в номере.
         </div>
     </div>
 </div>
@@ -921,30 +847,17 @@ void loop() {
 <!-- ============== ЗАКЛЮЧЕНИЕ ============== -->
 <div style="background: linear-gradient(145deg, #2c3e50, #1a252f); color: white; padding: 40px; border-radius: 16px; margin-top: 50px;">
     <h2 style="background: none; color: #e67e22; border: none; padding: 0; margin-top: 0; display: block;">📌 ВЫВОДЫ</h2>
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
-        <div>
-            <p style="font-size: 1.2em; margin-bottom: 20px;">Что вы изучили:</p>
-            <ul style="list-style-type: none; padding-left: 0;">
-                <li style="margin-bottom: 12px;">✓ Библиотека IRremote и декодинг протоколов</li>
-                <li style="margin-bottom: 12px;">✓ Управление светодиодами (вкл/выкл, RGB)</li>
-                <li style="margin-bottom: 12px;">✓ Управление сервоприводом (угол поворота)</li>
-                <li style="margin-bottom: 12px;">✓ ШИМ-регулировка яркости (диммер)</li>
-                <li style="margin-bottom: 12px;">✓ Вывод на LCD-дисплей</li>
-                <li style="margin-bottom: 12px;">✓ Управление нагрузкой через реле</li>
-                <li style="margin-bottom: 12px;">✓ Обработка удержания кнопки (код повтора)</li>
-            </ul>
-        </div>
-        <div>
-            <p style="font-size: 1.2em; margin-bottom: 20px;">Дальнейшие темы:</p>
-            <ul style="list-style-type: none; padding-left: 0;">
-                <li style="margin-bottom: 12px;">➡ ИК-передатчик (управление техникой с Arduino)</li>
-                <li style="margin-bottom: 12px;">➡ Связка ИК + WiFi (ESP8266) — облачный пульт</li>
-                <li style="margin-bottom: 12px;">➡ Изучение других протоколов (Sony, RC5, RC6)</li>
-                <li style="margin-bottom: 12px;">➡ Создание универсального пульта с обучением</li>
-            </ul>
-        </div>
-    </div>
-    
+    <p style="font-size: 1.2em;">В этом проекте вы научились:</p>
+    <ul style="columns: 2; list-style-type: none; padding-left: 0;">
+        <li style="margin-bottom: 10px;">✓ <code>IrReceiver.begin()</code> — запуск приёмника</li>
+        <li style="margin-bottom: 10px;">✓ <code>IrReceiver.decode()</code> — проверка сигнала</li>
+        <li style="margin-bottom: 10px;">✓ <code>decodedRawData</code> — сырой код кнопки</li>
+        <li style="margin-bottom: 10px;">✓ <code>command</code> и <code>address</code> — команда и адрес</li>
+        <li style="margin-bottom: 10px;">✓ <code>flags</code> и <code>IRDATA_FLAGS_IS_REPEAT</code> — удержание</li>
+        <li style="margin-bottom: 10px;">✓ Управление светодиодами, серво, реле</li>
+        <li style="margin-bottom: 10px;">✓ ШИМ-диммер с поддержкой удержания</li>
+        <li style="margin-bottom: 10px;">✓ Вывод на LCD-дисплей</li>
+    </ul>
 </div>
 
 </body>
