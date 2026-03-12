@@ -202,7 +202,7 @@
 // ЭКСПЕРИМЕНТ 1: Чтение кодов ИК-пульта (IRremote 4.x)
 // Установите библиотеку IRremote через менеджер библиотек
 
-#include <IRremote.hpp>  // Обратите внимание на .hpp!
+#include &lt;IRremote.hpp&gt;  // Обратите внимание на .hpp!
 
 #define IR_RECEIVE_PIN 11  // Пин подключения OUT
 
@@ -274,7 +274,7 @@ void loop() {
 // ЭКСПЕРИМЕНТ 2: Управление светодиодом с пульта
 // Одна кнопка включает/выключает светодиод
 
-#include <IRremote.hpp>
+#include &lt;IRremote.hpp&gt;
 
 #define IR_RECEIVE_PIN 11
 #define LED_PIN 13
@@ -344,7 +344,7 @@ void loop() {
 // ЭКСПЕРИМЕНТ 3: RGB-управление с пульта
 // Кнопки 1,2,3,4 управляют цветами
 
-#include <IRremote.hpp>
+#include &lt;IRremote.hpp&gt;
 
 #define IR_RECEIVE_PIN 11
 
@@ -444,8 +444,8 @@ void loop() {
     <div class="code-block">
 // ЭКСПЕРИМЕНТ 4: Управление сервоприводом с пульта
 
-#include <IRremote.hpp>
-#include <Servo.h>
+#include &lt;IRremote.hpp&gt;
+#include &lt;Servo.h&gt;
 
 #define IR_RECEIVE_PIN 11
 #define SERVO_PIN 9
@@ -531,7 +531,7 @@ void loop() {
 // ЭКСПЕРИМЕНТ 5: Диммер с поддержкой удержания
 // Громче = ярче, тише = тусклее
 
-#include <IRremote.hpp>
+#include &lt;IRremote.hpp&gt;
 
 #define IR_RECEIVE_PIN 11
 #define LED_PWM 9
@@ -629,9 +629,9 @@ void loop() {
     <div class="code-block">
 // ЭКСПЕРИМЕНТ 6: ИК-пульт + LCD-дисплей
 
-#include <IRremote.hpp>
-#include <Wire.h>
-#include <LiquidCrystal_I2C.h>
+#include &lt;IRremote.hpp&gt;
+#include &lt;Wire.h&gt;
+#include &lt;LiquidCrystal_I2C.h&gt;
 
 #define IR_RECEIVE_PIN 11
 
@@ -722,7 +722,7 @@ void loop() {
 // ЭКСПЕРИМЕНТ 7: Управление реле с ИК-пульта
 // Кнопка POWER включает/выключает нагрузку
 
-#include <IRremote.hpp>
+#include &lt;IRremote.hpp&gt;
 
 #define IR_RECEIVE_PIN 11
 #define RELAY_PIN 8
